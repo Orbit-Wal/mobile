@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { getBalances } from "@/services/stellar";
 import { useWalletStore } from "@/store/walletStore";
+import { Link } from "expo-router";
 
 export default function HomeScreen() {
   const publicKey = useWalletStore((s) => s.publicKey);
@@ -77,6 +78,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ))}
       </View>
+      <Link href="/chat" asChild>
+        <TouchableOpacity style={styles.assistantLink}>
+          <Text style={styles.assistantTitle}>Code Assistant</Text>
+          <Text style={styles.assistantCopy}>Ask coding questions, review snippets, and get suggestions.</Text>
+        </TouchableOpacity>
+      </Link>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Balances</Text>
         {Object.keys(balances).length === 0 && !loading ? (
@@ -118,6 +125,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   actionText: { color: "#f8fafc", fontWeight: "600", fontSize: 13 },
+  assistantLink: { marginHorizontal: 24, padding: 16, borderRadius: 12, backgroundColor: "#312e81" },
+  assistantTitle: { color: "#f8fafc", fontWeight: "700", fontSize: 16 },
+  assistantCopy: { color: "#c4b5fd", fontSize: 13, marginTop: 4 },
   section: { padding: 24 },
   sectionTitle: { color: "#f8fafc", fontSize: 18, fontWeight: "600", marginBottom: 12 },
   empty: { color: "#64748b", textAlign: "center", marginTop: 16 },
