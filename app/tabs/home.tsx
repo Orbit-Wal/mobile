@@ -9,6 +9,7 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
+import { router } from "expo-router";
 import { getBalances } from "@/services/stellar";
 import { useWalletStore } from "@/store/walletStore";
 import { Link } from "expo-router";
@@ -101,6 +102,13 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>Recent Transactions</Text>
         <Text style={styles.empty}>No transactions yet</Text>
       </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Security</Text>
+        <TouchableOpacity style={styles.securityRow} onPress={() => router.push("/guardians")}>
+          <Text style={styles.securityRowText}>Guardians & Recovery</Text>
+          <Text style={styles.securityRowChevron}>›</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -134,4 +142,14 @@ const styles = StyleSheet.create({
   balanceRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
   balanceAsset: { color: "#f8fafc", fontWeight: "600" },
   balanceAmount: { color: "#94a3b8" },
+  securityRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#1e293b",
+    borderRadius: 12,
+    padding: 16,
+  },
+  securityRowText: { color: "#f8fafc", fontWeight: "600" },
+  securityRowChevron: { color: "#64748b", fontSize: 18 },
 });
