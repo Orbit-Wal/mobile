@@ -48,6 +48,17 @@ EXPO_PUBLIC_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
 EXPO_PUBLIC_API_URL=http://localhost:4000
 ```
 
+## Code Assistant
+
+The in-app **Code Assistant** is available from the home screen. It keeps the
+conversation context during the current session, renders generated code in a
+monospace block, and supports copying snippets to the clipboard.
+
+For production, set `EXPO_PUBLIC_API_URL` to your server (not a local URL) and
+implement `POST /api/code-assistant/chat`. The endpoint receives `{ messages }`
+and returns `{ message, code?, language? }`. Keep OpenAI or other provider API
+keys on that server; never ship them in the mobile app.
+
 ## Related Repos
 
 - [`Orbit-Wal/Globe-Wallet`](https://github.com/Orbit-Wal/Globe-Wallet) — Web frontend
