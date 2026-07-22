@@ -22,6 +22,9 @@ export default function ImportWalletScreen() {
   const setOnboarded = useWalletStore((s) => s.setOnboarded);
 
   const handleImport = async () => {
+    const isSecure = await checkSecurityAndWarn();
+    if (!isSecure) return;
+
     const trimmed = secret.trim();
     let keypair: StellarSdk.Keypair;
     try {
