@@ -10,10 +10,12 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import * as StellarSdk from "@stellar/stellar-sdk";
-import { saveSecretKey } from "@/services/secureStorage";
+import { saveSecretKey, checkSecurityAndWarn } from "@/services/secureStorage";
 import { useWalletStore } from "@/store/walletStore";
+import { useScreenCaptureProtection } from "@/hooks/useScreenCaptureProtection";
 
 export default function ImportWalletScreen() {
+  useScreenCaptureProtection();
   const [secret, setSecret] = useState("");
   const [loading, setLoading] = useState(false);
   const setStorePublicKey = useWalletStore((s) => s.setPublicKey);

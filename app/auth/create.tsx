@@ -3,16 +3,21 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } fr
 import { router } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { generateKeypair } from "@/services/stellar";
-import { saveSecretKey } from "@/services/secureStorage";
+import { saveSecretKey, checkSecurityAndWarn } from "@/services/secureStorage";
 import { useWalletStore } from "@/store/walletStore";
+import { useScreenCaptureProtection } from "@/hooks/useScreenCaptureProtection";
 
 export default function CreateWalletScreen() {
+  useScreenCaptureProtection();
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const setStorePublicKey = useWalletStore((s) => s.setPublicKey);
   const setOnboarded = useWalletStore((s) => s.setOnboarded);
 
   const handleGenerate = async () => {
+    const isSecure = await checkSecurityAndWarn();
+    if (!isSecure) return;
+
     const keypair = generateKeypair();
     setSaving(true);
     try {
