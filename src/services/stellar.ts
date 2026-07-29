@@ -3,14 +3,43 @@ import * as StellarSdk from "@stellar/stellar-sdk";
 const HORIZON_URL = process.env.EXPO_PUBLIC_HORIZON_URL ?? "https://horizon-testnet.stellar.org";
 const NETWORK_PASSPHRASE = process.env.EXPO_PUBLIC_NETWORK_PASSPHRASE ?? StellarSdk.Networks.TESTNET;
 
-const server = new StellarSdk.Horizon.Server(HORIZON_URL);
+const HORIZON_TIMEOUT = 10_000;
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 500;
+
+const server = new StellarSdk.Horizon.Server(HORIZON_URL, {
+  timeout: HORIZON_TIMEOUT,
+} as any);
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES,
+  baseDelay: number = BASE_BACKOFF_MS,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        await delay(baseDelay * Math.pow(2, attempt));
+      }
+    }
+  }
+  throw lastError;
+}
 
 export function generateKeypair(): StellarSdk.Keypair {
   return StellarSdk.Keypair.random();
 }
 
 export async function getAccount(publicKey: string) {
-  return server.loadAccount(publicKey);
+  return retryWithBackoff(() => server.loadAccount(publicKey));
 }
 
 export async function getBalances(publicKey: string): Promise<Record<string, string>> {
