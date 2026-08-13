@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { AppStateOverlay } from "@/components/AppStateOverlay";
 
 export default function RootLayout() {
   return (
@@ -12,6 +13,7 @@ export default function RootLayout() {
         <Stack.Screen name="guardians" />
         <Stack.Screen name="chat" />
       </Stack>
+      <AppStateOverlay />
     </>
   );
 }
