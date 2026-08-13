@@ -2,6 +2,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Device from "expo-device";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
+import { assessSecretStorageTier, SecretStorageAssessment } from "./keychainParity";
 
 const SECRET_KEY_STORAGE_KEY = "globewallet_secret_key";
 const ROOT_WARNING_ACKNOWLEDGED_KEY = "root_warning_acknowledged";
@@ -45,7 +46,30 @@ export async function checkSecurityAndWarn(): Promise<boolean> {
   }
 }
 
+function warnAboutWeakStorage(assessment: SecretStorageAssessment): Promise<void> {
+  return new Promise((resolve) => {
+    Alert.alert(
+      "Weak secure storage detected",
+      `Your device's secure storage is weaker than recommended (${assessment.tier}).\n\n${assessment.reasons.join(
+        "\n"
+      )}\n\nYour secret key will still be stored, but consider using a device with hardware-backed secure storage.`,
+      [
+        {
+          text: "I Understand",
+          style: "default",
+          onPress: () => resolve(),
+        },
+      ],
+      { cancelable: false }
+    );
+  });
+}
+
 export async function saveSecretKey(secret: string): Promise<void> {
+  const assessment = await assessSecretStorageTier();
+  if (assessment.tier !== "strong") {
+    await warnAboutWeakStorage(assessment);
+  }
   await SecureStore.setItemAsync(SECRET_KEY_STORAGE_KEY, secret, {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   });
