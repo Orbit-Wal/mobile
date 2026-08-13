@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useGuardianStore } from "@/store/guardianStore";
 import { useWalletStore } from "@/store/walletStore";
 import { getSecretKey } from "@/services/secureStorage";
+import { LocalAuthRequiredError } from "@/services/localAuth";
 import {
   buildEnableRecoveryTx,
   validateRecoveryConfig,
@@ -51,7 +52,16 @@ export default function RecoveryConfigScreen() {
 
     setSaving(true);
     try {
-      const secret = await getSecretKey();
+      let secret: string | null;
+      try {
+        secret = await getSecretKey();
+      } catch (e) {
+        if (e instanceof LocalAuthRequiredError) {
+          Alert.alert("Authentication required", "Local authentication was cancelled or unavailable. Your secret key was not unlocked.");
+          return;
+        }
+        throw e;
+      }
       if (!secret) throw new Error("Could not load device key.");
       const keypair = StellarSdk.Keypair.fromSecret(secret);
 

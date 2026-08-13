@@ -2,6 +2,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Device from "expo-device";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
+import { requireLocalAuth } from "./localAuth";
 
 const SECRET_KEY_STORAGE_KEY = "globewallet_secret_key";
 const ROOT_WARNING_ACKNOWLEDGED_KEY = "root_warning_acknowledged";
@@ -52,6 +53,7 @@ export async function saveSecretKey(secret: string): Promise<void> {
 }
 
 export async function getSecretKey(): Promise<string | null> {
+  await requireLocalAuth();
   return SecureStore.getItemAsync(SECRET_KEY_STORAGE_KEY);
 }
 
