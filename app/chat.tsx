@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import * as Clipboard from "expo-clipboard";
+import { copyPublic } from "@/services/clipboard";
 import { askCodeAssistant } from "@/services/codeAssistant";
 import type { ChatMessage } from "@/types/chat";
 
@@ -50,8 +50,8 @@ export default function ChatScreen() {
   };
 
   const copyCode = async (code: string) => {
-    await Clipboard.setStringAsync(code);
-    Alert.alert("Copied", "Code copied to your clipboard.");
+    await copyPublic(code);
+    Alert.alert("Copied", "Code copied to your clipboard. It will auto-clear after 30 seconds.");
   };
 
   return (

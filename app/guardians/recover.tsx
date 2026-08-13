@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator, ScrollView } from "react-native";
-import * as Clipboard from "expo-clipboard";
+import { copyPublic } from "@/services/clipboard";
 import * as StellarSdk from "@stellar/stellar-sdk";
 import { buildRecoverAccountTx, signAsGuardian, submitSignedTransaction } from "@/services/guardianRecovery";
 
@@ -77,8 +77,8 @@ export default function RecoverAccountScreen() {
 
   const handleCopyXdr = async () => {
     if (!workingTx) return;
-    await Clipboard.setStringAsync(workingTx.toXDR());
-    Alert.alert("Copied", "Share this with the next guardian to collect their signature.");
+    await copyPublic(workingTx.toXDR());
+    Alert.alert("Copied", "Share this with the next guardian to collect their signature. It will auto-clear after 30 seconds.");
   };
 
   const handleSubmit = async () => {

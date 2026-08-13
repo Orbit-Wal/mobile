@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { router } from "expo-router";
-import * as Clipboard from "expo-clipboard";
 import { generateKeypair } from "@/services/stellar";
 import { saveSecretKey, checkSecurityAndWarn } from "@/services/secureStorage";
+import { copyPublic, DEFAULT_PUBLIC_CLEAR_MS } from "@/services/clipboard";
+import { useClipboardCountdown } from "@/hooks/useClipboardCountdown";
 import { useWalletStore } from "@/store/walletStore";
 import { useScreenCaptureProtection } from "@/hooks/useScreenCaptureProtection";
 
@@ -11,6 +12,8 @@ export default function CreateWalletScreen() {
   useScreenCaptureProtection();
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const clearInSeconds = useClipboardCountdown(copied, DEFAULT_PUBLIC_CLEAR_MS);
   const setStorePublicKey = useWalletStore((s) => s.setPublicKey);
   const setOnboarded = useWalletStore((s) => s.setOnboarded);
 
@@ -39,8 +42,15 @@ export default function CreateWalletScreen() {
 
   const handleCopy = async () => {
     if (!publicKey) return;
-    await Clipboard.setStringAsync(publicKey);
-    Alert.alert("Copied", "Public key copied to clipboard.");
+    try {
+      await copyPublic(publicKey);
+      setCopied(true);
+    } catch {
+      Alert.alert(
+        "Copy blocked",
+        "That content looks like a secret key. Sensitive material must be copied with copySensitive()."
+      );
+    }
   };
 
   return (
@@ -66,6 +76,9 @@ export default function CreateWalletScreen() {
           <Text style={styles.address} selectable>
             {publicKey}
           </Text>
+          {copied && clearInSeconds > 0 && (
+            <Text style={styles.copyNote}>Copied — clipboard clears in {clearInSeconds}s</Text>
+          )}
           <TouchableOpacity style={[styles.button, styles.buttonSecondary]} onPress={handleCopy}>
             <Text style={styles.buttonTextSecondary}>Copy Address</Text>
           </TouchableOpacity>
@@ -97,6 +110,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontFamily: "monospace",
   },
+  copyNote: { color: "#f59e0b", fontSize: 12, marginBottom: 12 },
   button: {
     width: "100%",
     backgroundColor: "#3b82f6",
