@@ -80,74 +80,66 @@ automated daily README-stats refresh in `.github`.
 
 ### Globe-Wallet (web frontend)
 
-| Contributor | Work |
-|---|---|
-| EbukaMoses | Receive page rebuild (QR/payment requests) + refactor passes; E2E send-flow stabilization for CI/WebKit; off-ramp validation test overhaul; clipboard/share navigator mocks; accessibility audits (axe) |
-| GoSTEAN | Transaction history persistence + pagination + sync service; safe-area layout & nav a11y; analytics/Recharts hardening; strict chart typings; crypto-native send flow with Stellar federation lookup |
-| Chigybillionz | Trustline management (add/remove non-native Stellar assets); CI vulnerability + merge fixes; conversion-math IEEE-754 float precision fix |
-| Ayinkx | components/ui bundle-size optimization + dead-code removal; startup-env validation + CI hardening |
-| AbuJulaybeeb | aria-live regions for async balance/tx updates; real Horizon polling + ledger settlement checks; SWC binary install fix |
-| Ndifreke000 / ndii-dev | Off-ramp fee utils + >90% test coverage; EVM (Base + Ethereum) chain support; i18n locale-routing fix; CSP/security headers; CI dependency-audit unblock; hotfixes |
-| Shepherd | WebAuthn (passkey) implementation; bearer token auth; i18n/RTL Arabic support; tx query-performance docs |
-| Austinaminu2 | Developer onboarding docs; E2E journeys for core wallet flows; env/network setup docs |
-| mac-dubem | Env-driven service resolution for FinanceServiceContainer; centralized error-code taxonomy |
-| whiteghost0001 | Stellar path-payments replacing mock convert; dynamic color-contrast a11y audit |
-| od-hunter | CI npm-audit gate + advisory patches; dead ExchangeService (fake DEX) removal; multi-account/account-switching |
-| christabel888 | Real Stellar submission for `sendPayment`; duplicate `AlertTitle` fix |
-| agnesadoga-creator | Clipboard/share failure handling; Stellar QR payload validation; fixed/percentage/mixed fee parsing |
-| JemimahEkong | Synced Soroban service bindings to contract spec; ABI drift detection |
-| superman32432432 / ebubeb683-ship-it | SSE stream endpoint; VirtualList virtualization for transaction views |
-| obacollins-lab | Claimable balances support |
-| Yunusabdul38 | Off-ramp API route (withdrawal processing) |
-| aji70 | Live exchange-rate API replacing hardcoded rates |
-| ayinde38 | Conversion math helpers + test coverage |
-| SYMBAxx | OpenTelemetry tracing at service boundary; env/network setup docs |
-| Maki-Zeninn | E2E wait-strategy audit (removed reliance on mocked timers) |
-| heymide | Round-trip conversion precision fix; rates-service request timeout |
-| DANeiraGarcia | Per-route rate-limiting middleware + integration tests |
-| vrickish | Cross-cutting clarity/testability integration pass |
-| Junman140 | Shared fixtures/mock-data service |
-| favourawaku | Wired convert page to shared wallet state |
-| Mimah97 | Accessible radio buttons for payment-method selection |
-| Tukura11 | Convert swap value-preservation fix |
-| dreamgenies | Receive-page Stellar address fallback |
-| dreamgeneX | AssetCode alignment with Stellar crypto assets |
-| yosemite01 | CONTRIBUTING.md + PR template requiring evidence of work |
+- **EbukaMoses** rebuilt the receive page (QR codes, payment requests) and went through several refactor passes on it, stabilized the E2E send-flow tests that kept flaking on CI/WebKit, overhauled the off-ramp validation tests, and added the axe accessibility audits.
+- **GoSTEAN** built transaction history out properly — persistence, pagination, a sync service — then did the same for the analytics dashboard (hardened the Recharts types, added a data pipeline) and shipped the crypto-native send flow with Stellar federation lookup.
+- **Chigybillionz** added trustline management so users can actually add/remove non-native Stellar assets, cleared out a round of CI vulnerabilities, and fixed a floating-point precision bug in the conversion math.
+- **Ayinkx** cut the components/ui bundle size down and removed dead scaffolding code, and separately hardened startup-env validation for CI.
+- **AbuJulaybeeb** added aria-live regions for async balance/tx updates, wired up real Horizon polling and ledger settlement checks (replacing a stub), and fixed a broken SWC binary install.
+- **Ndifreke000 / Genghis-codes** added off-ramp fee utilities with well over 90% test coverage, shipped EVM support (Base + Ethereum), fixed an i18n locale-routing 404, added CSP/security headers, and unblocked a stuck CI dependency-audit gate.
+- **Shepherd** implemented WebAuthn (passkey) login, bearer token auth, and Arabic i18n/RTL support, plus wrote up the transaction query-performance design notes.
+- **Austinaminu2** wrote the developer onboarding docs and environment setup notes, and added E2E journeys covering the core wallet flows.
+- **mac-dubem** made the FinanceServiceContainer env-driven and centralized error codes into one shared taxonomy instead of scattered magic strings.
+- **whiteghost0001** replaced the mock currency conversion with real Stellar path payments and audited dynamic color contrast for accessibility.
+- **od-hunter** gated CI on npm audit, ripped out a dead fake-DEX simulator that was pretending to be the exchange service, and added multi-account/account-switching support.
+- **christabel888** got `sendPayment` actually submitting to Stellar instead of simulating it, and fixed a duplicate `AlertTitle` declaration that was breaking the build.
+- **agnesadoga-creator** handled clipboard/share failures gracefully, validated Stellar QR payloads before encoding them, and fixed fee parsing across fixed/percentage/mixed fee types.
+- **JemimahEkong** synced the Soroban service bindings to the actual contract spec and added drift detection so they can't silently go stale again.
+- **superman32432432 / ebubeb683-ship-it** added an SSE stream endpoint and virtualized the transaction list so it doesn't choke on long histories.
+- **obacollins-lab** added claimable balances support.
+- **Yunusabdul38** built the off-ramp API route and withdrawal processing.
+- **aji70** replaced hardcoded exchange rates with a live rates API.
+- **ayinde38** wrote the conversion math helpers and their test coverage.
+- **SYMBAxx** added OpenTelemetry tracing at the service boundary.
+- **Maki-Zeninn** audited the E2E suite for tests quietly depending on mocked timers instead of real waits.
+- **heymide** fixed a precision-loss bug in round-trip conversion and added a request timeout to the rates service (it used to hang forever on a slow CoinGecko response).
+- **DANeiraGarcia** added per-route rate-limiting middleware with integration tests.
+- **vrickish** did a broad clarity/testability pass across several cross-cutting concerns.
+- **Junman140** built a shared fixtures/mock-data service to de-duplicate test setup.
+- **favourawaku** connected the convert page to shared wallet state (it was reading stale data before).
+- **Mimah97** swapped clickable divs for accessible radio buttons in payment-method selection.
+- **Tukura11** fixed a bug where the convert swap could lose valid conversion values.
+- **dreamgenies** added a fallback for sourcing the Stellar address on the receive page.
+- **dreamgeneX** aligned `AssetCode` handling with actual Stellar crypto assets.
+- **yosemite01** added CONTRIBUTING.md and a PR template that requires evidence of work.
 
 ### backend
 
-| Contributor | Work |
-|---|---|
-| yosemite01 | Repo init (Node/Express/TS); Soroban RPC integration; CONTRIBUTING.md |
-| bhanuprasad14 | Path payments, multi-sig, `tx_bad_seq` retry |
-| Debbys-design | Fee-bump support, muxed-address rejection, SEP-29 memo check |
-| mac-dubem | JWT auth with refresh-token rotation; keypair-issuance audit trail |
-| Ndifreke000 | Fixed sequence-number race by serializing sends per source account |
-| Shepherd | Cursor-based transaction pagination; env-var validation |
-| ndii-dev | Required API key on wallet routes; default-deny CORS |
+- **yosemite01** initialized the repo (Node/Express/TypeScript), later added the Soroban RPC integration, and wrote the CONTRIBUTING.md.
+- **bhanuprasad14** added path payments, multi-sig support, and retry logic for `tx_bad_seq` failures.
+- **Debbys-design** added fee-bump support, rejected muxed addresses where they shouldn't be accepted, and added the SEP-29 memo check.
+- **mac-dubem** built JWT auth with refresh-token rotation and added an audit trail for keypair issuance.
+- **Ndifreke000** closed a sequence-number race condition by serializing wallet sends per source account.
+- **Shepherd** added cursor-based pagination to the transactions endpoint and env-var validation.
+- **Genghis-codes** required an API key on wallet routes and switched CORS to default-deny.
 
 ### contract (Soroban)
 
-| Contributor | Work |
-|---|---|
-| yosemite01 | Repo init; guardian-based time-locked admin recovery; repaired a broken merge that left `main` non-building; CONTRIBUTING.md |
-| mac-dubem | Bounded whitelist & UserAssets `Vec` to `MAX_ASSETS=50` with admin migration |
-| TochukwuJustice | Spend-overflow rejection; two-step admin transfer |
-| syed-ghufran-hassan | Disambiguated spend limits by asset issuer (fixed a collision) |
-| Chigybillionz | Fixed spend-limit lowering not reclaiming already-banked spend |
-| od-hunter | Documented + tested `record_spend` reentrancy safety |
-| bamiebot-maker | Admin-gated upgrade proposal flow |
-| ONEONUORA | Test coverage for `record_spend` |
-| Globe Wallet Developer | Versioned, namespaced error-code ranges |
-| ndii-dev | Moved `DailySpent`/`Allowance` to persistent storage, closing a TTL-eviction gap |
+- **yosemite01** initialized the contracts repo, added guardian-based time-locked admin recovery, and at one point repaired a broken merge that had left `main` not building — plus the CONTRIBUTING.md.
+- **mac-dubem** bounded the whitelist and UserAssets vectors to `MAX_ASSETS=50`, with an admin migration path so existing data wasn't stranded.
+- **TochukwuJustice** fixed spend-overflow so it's rejected instead of wrapping, and added a two-step admin transfer instead of a single risky call.
+- **syed-ghufran-hassan** fixed a collision where spend limits weren't disambiguated by asset issuer.
+- **Chigybillionz** fixed spend-limit lowering so it actually reclaims spend already banked under the old, higher limit.
+- **od-hunter** documented and tested that `record_spend` is safe against reentrancy.
+- **bamiebot-maker** added an admin-gated upgrade proposal flow.
+- **ONEONUORA** added test coverage for `record_spend`.
+- **Globe Wallet Developer** added versioned, namespaced error-code ranges.
+- **Genghis-codes** moved `DailySpent`/`Allowance` to persistent storage, closing a TTL-eviction gap that could quietly reset spend limits.
 
 ### mobile (this repo)
 
-| Contributor | Work |
-|---|---|
-| yosemite01 | Repo init (Expo/RN/TS); guardian-based social/multi-sig recovery; CONTRIBUTING.md |
-| Ayinkx | Warn-only root detection; capture protection for key-material screens; in-app code-assistant chat |
-| ndii-dev | Wallet create/import flow with SecureStore-backed key storage |
+- **yosemite01** initialized the repo (Expo/React Native/TypeScript), added guardian-based social/multi-sig recovery, and wrote the CONTRIBUTING.md.
+- **Ayinkx** added warn-only root detection, protected key-material screens from screen capture, and built the in-app code-assistant chat.
+- **Genghis-codes** wired up the wallet create/import flow with SecureStore-backed key storage.
 
 ### .github
 
