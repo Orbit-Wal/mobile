@@ -146,6 +146,12 @@ export async function sendPayment(params: {
   amount: string;
   memo?: string;
 }): Promise<StellarSdk.Horizon.HorizonApi.SubmitTransactionResponse> {
+  // Note on key material lifetime (issue #37): sourceSecretKey and
+  // sourceKeypair are ordinary JS values here. JS strings are immutable and
+  // GC timing isn't controllable from userland, so there is no way to
+  // force-wipe them from memory the instant signing finishes -- this
+  // function just avoids holding extra copies or logging them, which is
+  // the practical ceiling for zeroization in a JS/Hermes runtime.
   const { sourceSecretKey, destinationPublicKey, asset, amount, memo } = params;
   const sourceKeypair = StellarSdk.Keypair.fromSecret(sourceSecretKey);
   const sourceAccount = await getAccount(sourceKeypair.publicKey());

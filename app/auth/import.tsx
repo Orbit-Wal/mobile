@@ -39,6 +39,14 @@ export default function ImportWalletScreen() {
     try {
       await saveSecretKey(trimmed);
       await completeOnboarding(keypair.publicKey());
+      // Drop our references so the secret isn't still sitting in this
+      // component's state/closures (and thus the TextInput's rendered
+      // value) after it's already durably persisted in SecureStore. JS
+      // strings are immutable and the engine's GC timing isn't
+      // controllable, so this bounds *how long we hold a reference*, not a
+      // true memory wipe -- see the note on stellar.ts's sendPayment for
+      // the same caveat on the signing path.
+      setSecret("");
       router.replace("/tabs/home");
     } catch (err) {
       if (err instanceof Error && err.message.startsWith("SECRET_ALREADY_EXISTS")) {
