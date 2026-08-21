@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { router } from "expo-router";
-import * as Clipboard from "expo-clipboard";
+import { copyWithAutoClear } from "@/utils/clipboard";
 import { generateKeypair } from "@/services/stellar";
 import { saveSecretKey, checkSecurityAndWarn } from "@/services/secureStorage";
 import { useWalletStore } from "@/store/walletStore";
@@ -49,8 +49,8 @@ export default function CreateWalletScreen() {
 
   const handleCopy = async () => {
     if (!publicKey) return;
-    await Clipboard.setStringAsync(publicKey);
-    Alert.alert("Copied", "Public key copied to clipboard.");
+    await copyWithAutoClear(publicKey);
+    Alert.alert("Copied", "Public key copied to clipboard. It will auto-clear in 45 seconds.");
   };
 
   return (
