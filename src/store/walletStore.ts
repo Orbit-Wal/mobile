@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getWalletMeta, saveWalletMeta } from "@/services/secureStorage";
+import { deleteSecretKey, deleteWalletMeta, getWalletMeta, saveWalletMeta } from "@/services/secureStorage";
 
 interface WalletState {
   isOnboarded: boolean;
@@ -17,7 +17,13 @@ interface WalletState {
   setOnboarded: (value: boolean) => void;
   setPublicKey: (key: string) => void;
   setBalances: (balances: Record<string, string>) => void;
-  reset: () => void;
+  /**
+   * Full logout: deletes the SecureStore secret and persisted wallet meta,
+   * then clears in-memory state. Must be awaited by callers that navigate
+   * away afterward, so the store never reports isOnboarded: false while the
+   * secret is still on disk.
+   */
+  reset: () => Promise<void>;
 }
 
 export const useWalletStore = create<WalletState>((set) => ({
@@ -39,5 +45,9 @@ export const useWalletStore = create<WalletState>((set) => ({
   setOnboarded: (value) => set({ isOnboarded: value }),
   setPublicKey: (key) => set({ publicKey: key }),
   setBalances: (balances) => set({ balances }),
-  reset: () => set({ isOnboarded: false, publicKey: null, balances: {} }),
+
+  reset: async () => {
+    await Promise.all([deleteSecretKey(), deleteWalletMeta()]);
+    set({ isOnboarded: false, publicKey: null, balances: {} });
+  },
 }));
