@@ -24,6 +24,49 @@ export class StellarServiceError extends Error {
   }
 }
 
+const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_RETRIES = 2;
+const RETRY_BASE_DELAY_MS = 300;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new StellarServiceError(`${label} timed out after ${timeoutMs}ms.`, "NETWORK_ERROR"));
+    }, timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
+/**
+ * Retries only NETWORK_ERROR-classified failures (timeouts, dropped
+ * connections, 5xx) with exponential backoff. INVALID_PUBLIC_KEY and
+ * ACCOUNT_NOT_FOUND are deliberately not retried -- the answer won't change
+ * without user action, so retrying would just add latency.
+ */
+async function withRetry<T>(fn: () => Promise<T>, retries = DEFAULT_RETRIES): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const isRetryable = err instanceof StellarServiceError ? err.code === "NETWORK_ERROR" : true;
+      if (!isRetryable || attempt === retries) throw err;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_DELAY_MS * 2 ** attempt));
+    }
+  }
+  throw lastErr;
+}
+
 export function generateKeypair(): StellarSdk.Keypair {
   return StellarSdk.Keypair.random();
 }
@@ -36,20 +79,23 @@ export async function getAccount(publicKey: string) {
     );
   }
 
-  try {
-    return await server.loadAccount(publicKey);
-  } catch (err) {
-    if (err instanceof StellarSdk.NotFoundError) {
+  return withRetry(async () => {
+    try {
+      return await withTimeout(server.loadAccount(publicKey), DEFAULT_TIMEOUT_MS, "loadAccount");
+    } catch (err) {
+      if (err instanceof StellarSdk.NotFoundError) {
+        throw new StellarServiceError(
+          "This account has not been funded on the network yet.",
+          "ACCOUNT_NOT_FOUND"
+        );
+      }
+      if (err instanceof StellarServiceError) throw err;
       throw new StellarServiceError(
-        "This account has not been funded on the network yet.",
-        "ACCOUNT_NOT_FOUND"
+        "Could not reach the Stellar network. Check your connection and try again.",
+        "NETWORK_ERROR"
       );
     }
-    throw new StellarServiceError(
-      "Could not reach the Stellar network. Check your connection and try again.",
-      "NETWORK_ERROR"
-    );
-  }
+  });
 }
 
 export async function getBalances(publicKey: string): Promise<Record<string, string>> {
@@ -90,5 +136,10 @@ export async function sendPayment(params: {
   if (memo) builder.addMemo(StellarSdk.Memo.text(memo));
   const tx = builder.build();
   tx.sign(sourceKeypair);
-  return server.submitTransaction(tx);
+  // Deliberately no retry here, unlike getAccount: if submitTransaction's
+  // response is lost after Horizon already applied the transaction, blindly
+  // retrying could double-submit. A timeout still applies so a hung request
+  // doesn't leave the caller waiting forever, but the caller is responsible
+  // for checking transaction status before deciding to resubmit.
+  return withTimeout(server.submitTransaction(tx), DEFAULT_TIMEOUT_MS, "submitTransaction");
 }
