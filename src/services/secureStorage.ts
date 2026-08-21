@@ -45,7 +45,20 @@ export async function checkSecurityAndWarn(): Promise<boolean> {
   }
 }
 
-export async function saveSecretKey(secret: string): Promise<void> {
+export async function saveSecretKey(
+  secret: string,
+  options: { allowOverwrite?: boolean } = {}
+): Promise<void> {
+  if (!options.allowOverwrite) {
+    const existing = await SecureStore.getItemAsync(SECRET_KEY_STORAGE_KEY);
+    if (existing !== null) {
+      throw new Error(
+        "SECRET_ALREADY_EXISTS: a wallet secret is already stored on this device. " +
+          "Reset the existing wallet before creating or importing a new one, or pass " +
+          "{ allowOverwrite: true } if this call site intentionally replaces it."
+      );
+    }
+  }
   await SecureStore.setItemAsync(SECRET_KEY_STORAGE_KEY, secret, {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   });

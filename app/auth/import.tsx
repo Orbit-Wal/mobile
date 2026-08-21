@@ -42,8 +42,15 @@ export default function ImportWalletScreen() {
       setStorePublicKey(keypair.publicKey());
       setOnboarded(true);
       router.replace("/tabs/home");
-    } catch {
-      Alert.alert("Error", "Could not securely store your key. Please try again.");
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith("SECRET_ALREADY_EXISTS")) {
+        Alert.alert(
+          "Wallet Already Exists",
+          "A wallet is already stored on this device. Reset your existing wallet before importing a different one."
+        );
+      } else {
+        Alert.alert("Error", "Could not securely store your key. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
