@@ -12,6 +12,7 @@ import {
 import { router } from "expo-router";
 import { getBalances, StellarServiceError } from "@/services/stellar";
 import { useWalletStore } from "@/store/walletStore";
+import { useIsOffline } from "@/hooks/useNetworkStatus";
 import { Link } from "expo-router";
 
 export default function HomeScreen() {
@@ -21,10 +22,20 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const isOffline = useIsOffline();
 
   const load = useCallback(async () => {
     if (!publicKey) {
       setLoading(false);
+      return;
+    }
+    if (isOffline) {
+      // Don't burn a timeout+retry cycle asking Horizon when we already
+      // know there's no connection -- show the offline banner instead and
+      // let the existing cached balances stand.
+      setError(null);
+      setLoading(false);
+      setRefreshing(false);
       return;
     }
     setError(null);
@@ -47,7 +58,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [publicKey, setBalances]);
+  }, [publicKey, setBalances, isOffline]);
 
   useEffect(() => {
     load();
@@ -71,6 +82,11 @@ export default function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#f8fafc" />
       }
     >
+      {isOffline && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineBannerText}>You're offline — showing last known balances</Text>
+        </View>
+      )}
       <View style={styles.header}>
         <Text style={styles.greeting}>Good morning 👋</Text>
         <Text style={styles.walletLabel}>Total Balance</Text>
@@ -124,6 +140,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0f172a" },
+  offlineBanner: { backgroundColor: "#7c2d12", paddingVertical: 8, paddingHorizontal: 16 },
+  offlineBannerText: { color: "#fed7aa", fontSize: 12, textAlign: "center", fontWeight: "600" },
   header: { padding: 24, paddingTop: 64, alignItems: "center" },
   greeting: { color: "#94a3b8", fontSize: 14, marginBottom: 8 },
   walletLabel: { color: "#64748b", fontSize: 12, marginBottom: 4 },
