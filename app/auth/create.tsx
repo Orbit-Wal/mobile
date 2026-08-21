@@ -14,11 +14,16 @@ export default function CreateWalletScreen() {
   const completeOnboarding = useWalletStore((s) => s.completeOnboarding);
 
   const handleGenerate = async () => {
+    if (saving) return;
+    setSaving(true);
+
     const isSecure = await checkSecurityAndWarn();
-    if (!isSecure) return;
+    if (!isSecure) {
+      setSaving(false);
+      return;
+    }
 
     const keypair = generateKeypair();
-    setSaving(true);
     try {
       await saveSecretKey(keypair.secret());
       setPublicKey(keypair.publicKey());
