@@ -10,7 +10,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
-import { getBalances } from "@/services/stellar";
+import { getBalances, StellarServiceError } from "@/services/stellar";
 import { useWalletStore } from "@/store/walletStore";
 import { Link } from "expo-router";
 
@@ -31,9 +31,18 @@ export default function HomeScreen() {
     try {
       const result = await getBalances(publicKey);
       setBalances(result);
-    } catch {
-      // Unfunded testnet accounts 404 on Horizon until the first incoming payment.
-      setError("Could not load balances. Account may not be funded yet.");
+    } catch (err) {
+      if (err instanceof StellarServiceError) {
+        if (err.code === "ACCOUNT_NOT_FOUND") {
+          setError("This account isn't funded yet. Send it some XLM to activate it.");
+        } else if (err.code === "NETWORK_ERROR") {
+          setError("Could not reach the Stellar network. Pull down to retry.");
+        } else {
+          setError("This wallet's address looks invalid. Try reimporting your wallet.");
+        }
+      } else {
+        setError("Could not load balances. Please try again.");
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

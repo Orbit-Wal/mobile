@@ -5,12 +5,51 @@ const NETWORK_PASSPHRASE = process.env.EXPO_PUBLIC_NETWORK_PASSPHRASE ?? Stellar
 
 const server = new StellarSdk.Horizon.Server(HORIZON_URL);
 
+export type StellarServiceErrorCode = "INVALID_PUBLIC_KEY" | "ACCOUNT_NOT_FOUND" | "NETWORK_ERROR";
+
+/**
+ * Wraps every failure mode getAccount/getBalances can hit in one typed error
+ * so callers (UI code) can show a specific message instead of a generic
+ * "something went wrong" -- an unfunded testnet account (404, expected and
+ * recoverable by funding it) looks nothing like a malformed address or a
+ * dropped connection, and shouldn't be presented the same way.
+ */
+export class StellarServiceError extends Error {
+  code: StellarServiceErrorCode;
+
+  constructor(message: string, code: StellarServiceErrorCode) {
+    super(message);
+    this.name = "StellarServiceError";
+    this.code = code;
+  }
+}
+
 export function generateKeypair(): StellarSdk.Keypair {
   return StellarSdk.Keypair.random();
 }
 
 export async function getAccount(publicKey: string) {
-  return server.loadAccount(publicKey);
+  if (!StellarSdk.StrKey.isValidEd25519PublicKey(publicKey)) {
+    throw new StellarServiceError(
+      `"${publicKey}" is not a valid Stellar public key.`,
+      "INVALID_PUBLIC_KEY"
+    );
+  }
+
+  try {
+    return await server.loadAccount(publicKey);
+  } catch (err) {
+    if (err instanceof StellarSdk.NotFoundError) {
+      throw new StellarServiceError(
+        "This account has not been funded on the network yet.",
+        "ACCOUNT_NOT_FOUND"
+      );
+    }
+    throw new StellarServiceError(
+      "Could not reach the Stellar network. Check your connection and try again.",
+      "NETWORK_ERROR"
+    );
+  }
 }
 
 export async function getBalances(publicKey: string): Promise<Record<string, string>> {
