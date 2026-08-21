@@ -5,7 +5,11 @@ const NETWORK_PASSPHRASE = process.env.EXPO_PUBLIC_NETWORK_PASSPHRASE ?? Stellar
 
 const server = new StellarSdk.Horizon.Server(HORIZON_URL);
 
-export type StellarServiceErrorCode = "INVALID_PUBLIC_KEY" | "ACCOUNT_NOT_FOUND" | "NETWORK_ERROR";
+export type StellarServiceErrorCode =
+  | "INVALID_PUBLIC_KEY"
+  | "ACCOUNT_NOT_FOUND"
+  | "NETWORK_ERROR"
+  | "ENTROPY_UNAVAILABLE";
 
 /**
  * Wraps every failure mode getAccount/getBalances can hit in one typed error
@@ -67,7 +71,31 @@ async function withRetry<T>(fn: () => Promise<T>, retries = DEFAULT_RETRIES): Pr
   throw lastErr;
 }
 
+/**
+ * @stellar/stellar-sdk generates keys via tweetnacl, which requires
+ * `crypto.getRandomValues` to be present *before* it's first imported --
+ * see index.js, which loads the react-native-get-random-values polyfill
+ * ahead of expo-router/entry for exactly this reason. If that polyfill is
+ * ever removed, or a future refactor imports stellar.ts from a module
+ * evaluated before the polyfill runs, tweetnacl silently and permanently
+ * disables its PRNG and Keypair.random() starts throwing "no PRNG" --
+ * this check turns that into an explicit, diagnosable error instead.
+ */
+function assertSecureRandomAvailable(): void {
+  const cryptoObj = (globalThis as { crypto?: Crypto }).crypto;
+  if (!cryptoObj || typeof cryptoObj.getRandomValues !== "function") {
+    throw new StellarServiceError(
+      "Secure random number generation is unavailable on this device " +
+        "(crypto.getRandomValues is missing). Wallet creation cannot proceed " +
+        "safely. This should never happen in a build that loads index.js's " +
+        "react-native-get-random-values polyfill before expo-router/entry.",
+      "ENTROPY_UNAVAILABLE"
+    );
+  }
+}
+
 export function generateKeypair(): StellarSdk.Keypair {
+  assertSecureRandomAvailable();
   return StellarSdk.Keypair.random();
 }
 

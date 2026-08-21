@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { router } from "expo-router";
 import { copyWithAutoClear } from "@/utils/clipboard";
-import { generateKeypair } from "@/services/stellar";
+import { generateKeypair, StellarServiceError } from "@/services/stellar";
 import { saveSecretKey, checkSecurityAndWarn } from "@/services/secureStorage";
 import { useWalletStore } from "@/store/walletStore";
 import { useScreenCaptureProtection } from "@/hooks/useScreenCaptureProtection";
@@ -23,12 +23,17 @@ export default function CreateWalletScreen() {
       return;
     }
 
-    const keypair = generateKeypair();
     try {
+      const keypair = generateKeypair();
       await saveSecretKey(keypair.secret());
       setPublicKey(keypair.publicKey());
     } catch (err) {
-      if (err instanceof Error && err.message.startsWith("SECRET_ALREADY_EXISTS")) {
+      if (err instanceof StellarServiceError && err.code === "ENTROPY_UNAVAILABLE") {
+        Alert.alert(
+          "Cannot Create Wallet Securely",
+          "This device is missing a secure random number source, so a new key cannot be safely generated here. Please restart the app; if this persists, do not import funds into a key generated on this device."
+        );
+      } else if (err instanceof Error && err.message.startsWith("SECRET_ALREADY_EXISTS")) {
         Alert.alert(
           "Wallet Already Exists",
           "A wallet is already stored on this device. Reset your existing wallet before creating a new one, or import a different key instead."
