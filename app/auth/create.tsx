@@ -67,7 +67,14 @@ export default function CreateWalletScreen() {
             We'll generate a new Stellar keypair on this device. The secret key never leaves your
             device and is stored in secure hardware-backed storage.
           </Text>
-          <TouchableOpacity style={styles.button} onPress={handleGenerate} disabled={saving}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleGenerate}
+            disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel="Generate Keypair"
+            accessibilityState={{ disabled: saving, busy: saving }}
+          >
             {saving ? (
               <ActivityIndicator color="#fff" />
             ) : (
@@ -78,13 +85,23 @@ export default function CreateWalletScreen() {
       ) : (
         <>
           <Text style={styles.subtitle}>Your new public address:</Text>
-          <Text style={styles.address} selectable>
+          <Text style={styles.address} selectable accessibilityLabel={`Public address ${publicKey}`}>
             {publicKey}
           </Text>
-          <TouchableOpacity style={[styles.button, styles.buttonSecondary]} onPress={handleCopy}>
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSecondary]}
+            onPress={handleCopy}
+            accessibilityRole="button"
+            accessibilityLabel="Copy Address"
+          >
             <Text style={styles.buttonTextSecondary}>Copy Address</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={handleContinue}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleContinue}
+            accessibilityRole="button"
+            accessibilityLabel="Continue"
+          >
             <Text style={styles.buttonText}>Continue</Text>
           </TouchableOpacity>
         </>

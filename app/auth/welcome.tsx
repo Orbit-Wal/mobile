@@ -10,12 +10,18 @@ export default function WelcomeScreen() {
       <TouchableOpacity
         style={styles.button}
         onPress={() => router.push("/auth/create")}
+        accessibilityRole="button"
+        accessibilityLabel="Create Wallet"
+        accessibilityHint="Generates a new Stellar keypair on this device"
       >
         <Text style={styles.buttonText}>Create Wallet</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.button, styles.buttonSecondary]}
         onPress={() => router.push("/auth/import")}
+        accessibilityRole="button"
+        accessibilityLabel="Import Wallet"
+        accessibilityHint="Enter an existing Stellar secret key"
       >
         <Text style={styles.buttonTextSecondary}>Import Wallet</Text>
       </TouchableOpacity>

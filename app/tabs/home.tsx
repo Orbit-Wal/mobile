@@ -91,27 +91,53 @@ export default function HomeScreen() {
         <Text style={styles.greeting}>Good morning 👋</Text>
         <Text style={styles.walletLabel}>Total Balance</Text>
         {loading ? (
-          <ActivityIndicator color="#f8fafc" style={{ marginTop: 12 }} />
+          <ActivityIndicator
+            color="#f8fafc"
+            style={{ marginTop: 12 }}
+            accessibilityLabel="Loading balance"
+          />
         ) : (
-          <Text style={styles.balance}>{xlmBalance ? `${xlmBalance} XLM` : "0.00 XLM"}</Text>
+          <Text
+            style={styles.balance}
+            accessibilityLabel={`Total balance ${xlmBalance ? `${xlmBalance} XLM` : "0.00 XLM"}`}
+          >
+            {xlmBalance ? `${xlmBalance} XLM` : "0.00 XLM"}
+          </Text>
         )}
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && (
+          <Text style={styles.errorText} accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        )}
       </View>
       <View style={styles.actions}>
         {["Send", "Receive", "Swap", "Buy"].map((action) => (
-          <TouchableOpacity key={action} style={styles.actionBtn} onPress={() => handleAction(action)}>
+          <TouchableOpacity
+            key={action}
+            style={styles.actionBtn}
+            onPress={() => handleAction(action)}
+            accessibilityRole="button"
+            accessibilityLabel={action}
+          >
             <Text style={styles.actionText}>{action}</Text>
           </TouchableOpacity>
         ))}
       </View>
       <Link href="/chat" asChild>
-        <TouchableOpacity style={styles.assistantLink}>
+        <TouchableOpacity
+          style={styles.assistantLink}
+          accessibilityRole="button"
+          accessibilityLabel="Code Assistant"
+          accessibilityHint="Ask coding questions, review snippets, and get suggestions"
+        >
           <Text style={styles.assistantTitle}>Code Assistant</Text>
           <Text style={styles.assistantCopy}>Ask coding questions, review snippets, and get suggestions.</Text>
         </TouchableOpacity>
       </Link>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Balances</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          Balances
+        </Text>
         {Object.keys(balances).length === 0 && !loading ? (
           <Text style={styles.empty}>No balances yet</Text>
         ) : (
@@ -124,12 +150,21 @@ export default function HomeScreen() {
         )}
       </View>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Transactions</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          Recent Transactions
+        </Text>
         <Text style={styles.empty}>No transactions yet</Text>
       </View>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Security</Text>
-        <TouchableOpacity style={styles.securityRow} onPress={() => router.push("/guardians")}>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          Security
+        </Text>
+        <TouchableOpacity
+          style={styles.securityRow}
+          onPress={() => router.push("/guardians")}
+          accessibilityRole="button"
+          accessibilityLabel="Guardians and Recovery"
+        >
           <Text style={styles.securityRowText}>Guardians & Recovery</Text>
           <Text style={styles.securityRowChevron}>›</Text>
         </TouchableOpacity>

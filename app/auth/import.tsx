@@ -71,11 +71,16 @@ export default function ImportWalletScreen() {
         autoCorrect={false}
         secureTextEntry
         multiline
+        accessibilityLabel="Stellar secret key"
+        accessibilityHint="Enter your existing secret key starting with S"
       />
       <TouchableOpacity
         style={styles.button}
         onPress={handleImport}
         disabled={loading || secret.trim().length === 0}
+        accessibilityRole="button"
+        accessibilityLabel="Import"
+        accessibilityState={{ disabled: loading || secret.trim().length === 0, busy: loading }}
       >
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Import</Text>}
       </TouchableOpacity>
