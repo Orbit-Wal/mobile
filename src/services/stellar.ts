@@ -149,8 +149,22 @@ export async function sendPayment(params: {
   const { sourceSecretKey, destinationPublicKey, asset, amount, memo } = params;
   const sourceKeypair = StellarSdk.Keypair.fromSecret(sourceSecretKey);
   const sourceAccount = await getAccount(sourceKeypair.publicKey());
+
+  // BASE_FEE (100 stroops) is the network minimum, not a real fee estimate --
+  // it's routinely insufficient during surge pricing, when transactions with
+  // only the base fee get starved out of the ledger. fetchBaseFee() asks
+  // Horizon for the fee actually required by recent ledger congestion; if
+  // that call fails for any reason we still fall back to BASE_FEE so a
+  // Horizon fee-stats outage doesn't block sending entirely.
+  let fee: string = StellarSdk.BASE_FEE;
+  try {
+    fee = String(await server.fetchBaseFee());
+  } catch {
+    // Fall back to BASE_FEE.
+  }
+
   const builder = new StellarSdk.TransactionBuilder(sourceAccount, {
-    fee: StellarSdk.BASE_FEE,
+    fee,
     networkPassphrase: NETWORK_PASSPHRASE,
   })
     .addOperation(
