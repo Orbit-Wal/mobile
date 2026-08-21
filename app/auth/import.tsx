@@ -18,8 +18,7 @@ export default function ImportWalletScreen() {
   useScreenCaptureProtection();
   const [secret, setSecret] = useState("");
   const [loading, setLoading] = useState(false);
-  const setStorePublicKey = useWalletStore((s) => s.setPublicKey);
-  const setOnboarded = useWalletStore((s) => s.setOnboarded);
+  const completeOnboarding = useWalletStore((s) => s.completeOnboarding);
 
   const handleImport = async () => {
     const isSecure = await checkSecurityAndWarn();
@@ -39,8 +38,7 @@ export default function ImportWalletScreen() {
     setLoading(true);
     try {
       await saveSecretKey(trimmed);
-      setStorePublicKey(keypair.publicKey());
-      setOnboarded(true);
+      await completeOnboarding(keypair.publicKey());
       router.replace("/tabs/home");
     } catch (err) {
       if (err instanceof Error && err.message.startsWith("SECRET_ALREADY_EXISTS")) {

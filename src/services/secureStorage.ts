@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
 
 const SECRET_KEY_STORAGE_KEY = "globewallet_secret_key";
+const PUBLIC_KEY_STORAGE_KEY = "globewallet_public_key";
 const ROOT_WARNING_ACKNOWLEDGED_KEY = "root_warning_acknowledged";
 
 export async function checkSecurityAndWarn(): Promise<boolean> {
@@ -70,4 +71,20 @@ export async function getSecretKey(): Promise<string | null> {
 
 export async function deleteSecretKey(): Promise<void> {
   await SecureStore.deleteItemAsync(SECRET_KEY_STORAGE_KEY);
+}
+
+// The public key isn't sensitive on its own, but we persist it alongside the
+// secret (same storage backend as guardianStorage.ts) so onboarding state
+// can be reconstructed after a cold start, without adding a second storage
+// dependency for one small value.
+export async function saveWalletMeta(publicKey: string): Promise<void> {
+  await SecureStore.setItemAsync(PUBLIC_KEY_STORAGE_KEY, publicKey);
+}
+
+export async function getWalletMeta(): Promise<string | null> {
+  return SecureStore.getItemAsync(PUBLIC_KEY_STORAGE_KEY);
+}
+
+export async function deleteWalletMeta(): Promise<void> {
+  await SecureStore.deleteItemAsync(PUBLIC_KEY_STORAGE_KEY);
 }

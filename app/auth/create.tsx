@@ -11,8 +11,7 @@ export default function CreateWalletScreen() {
   useScreenCaptureProtection();
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const setStorePublicKey = useWalletStore((s) => s.setPublicKey);
-  const setOnboarded = useWalletStore((s) => s.setOnboarded);
+  const completeOnboarding = useWalletStore((s) => s.completeOnboarding);
 
   const handleGenerate = async () => {
     const isSecure = await checkSecurityAndWarn();
@@ -37,10 +36,9 @@ export default function CreateWalletScreen() {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!publicKey) return;
-    setStorePublicKey(publicKey);
-    setOnboarded(true);
+    await completeOnboarding(publicKey);
     router.replace("/tabs/home");
   };
 
