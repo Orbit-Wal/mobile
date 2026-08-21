@@ -29,7 +29,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "GlobeWallet uses Face ID to unlock your wallet and protect your keys."
+        }
+      ]
     ],
     "scheme": "globewallet"
   }
