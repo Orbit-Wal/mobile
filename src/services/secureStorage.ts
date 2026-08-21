@@ -46,6 +46,19 @@ export async function checkSecurityAndWarn(): Promise<boolean> {
   }
 }
 
+// Backup/restore behavior (documented here per issue #17, not previously
+// written down anywhere): on iOS, WHEN_UNLOCKED_THIS_DEVICE_ONLY explicitly
+// excludes this item from iCloud Keychain sync/backup -- it never leaves the
+// device. On Android, expo-secure-store backs onto the Android Keystore,
+// whose keys are hardware-bound and are never included in Auto Backup even
+// if the app's SharedPreferences file is; a restored blob without its
+// Keystore key is simply undecryptable garbage. Net effect on both
+// platforms: the secret does not survive a device backup/restore, by
+// design. That's the safe behavior (a copied ciphertext with no way to
+// decrypt it), but it does mean a user who backs up and restores to a new
+// device must re-import their wallet -- there is intentionally no
+// migration path, since building one would mean the secret becomes
+// exportable, which defeats the point of hardware-backed storage.
 export async function saveSecretKey(
   secret: string,
   options: { allowOverwrite?: boolean } = {}
