@@ -35,6 +35,12 @@
         {
           "faceIDPermission": "GlobeWallet uses Face ID to unlock your wallet and protect your keys."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "GlobeWallet uses the camera to scan Stellar addresses and payment QR codes."
+        }
       ]
     ],
     "scheme": "globewallet"

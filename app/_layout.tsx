@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Stack } from "expo-router";
+import { ActivityIndicator, AppState, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
+import { Stack, router } from "expo-router";
+import * as Linking from "expo-linking";
 import { StatusBar } from "expo-status-bar";
+import NetInfo from "@react-native-community/netinfo";
 import { useWalletStore } from "@/store/walletStore";
+import { useNetworkStore } from "@/store/networkStore";
 import { authenticate } from "@/services/appLock";
+import { flushPendingPayments } from "@/services/stellar";
+import { useSendIntentStore } from "@/store/sendIntentStore";
+import { validateScannedInput } from "@/utils/scannedInput";
 
 // Re-lock after this long in the background, even if the OS never fully
 // killed the app. Chosen as a reasonable balance between security (an
@@ -15,6 +21,38 @@ export default function RootLayout() {
   const isOnboarded = useWalletStore((s) => s.isOnboarded);
   const hydrated = useWalletStore((s) => s.hydrated);
   const hydrate = useWalletStore((s) => s.hydrate);
+
+  const network = useNetworkStore((s) => s.network);
+  const networkHydrated = useNetworkStore((s) => s.hydrated);
+  const hydrateNetwork = useNetworkStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrateNetwork();
+  }, [hydrateNetwork]);
+
+  // Issue #14: flush the offline payment outbox once on cold start (in case
+  // the app was killed while items were still queued from a previous
+  // session), and again every time NetInfo reports a transition from
+  // offline to online. Fire-and-forget -- flushPendingPayments() is
+  // internally safe to call redundantly (see paymentQueue's queue lock),
+  // and there's no UI here that needs to block on the result.
+  const wasConnectedRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    flushPendingPayments().catch(() => {
+      // Best-effort; a failed flush attempt just leaves items pending for
+      // the next trigger.
+    });
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const isConnected = state.isConnected === true;
+      const wasConnected = wasConnectedRef.current;
+      wasConnectedRef.current = isConnected;
+      if (wasConnected === false && isConnected) {
+        flushPendingPayments().catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   // AppState transitions to "inactive" (iOS app switcher, incoming call
   // overlay) or "background" the instant the OS takes a snapshot for the
@@ -87,6 +125,34 @@ export default function RootLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, isOnboarded]);
 
+  // SEP-7 (`web+stellar:pay`/`web+stellar:tx`) deep link handling (#12).
+  // Reuses the exact same untrusted-input contract as QR scanning (#15) via
+  // validateScannedInput() -- a malformed or ambiguous link is rejected
+  // outright rather than best-effort parsed, and a valid one is only ever
+  // handed to the send screen as pre-validated data, never raw text.
+  useEffect(() => {
+    const handleUrl = (url: string | null) => {
+      if (!url) return;
+      const validated = validateScannedInput(url);
+      if (validated.kind === "invalid") {
+        // Only surface an error for links that were clearly *trying* to be
+        // a SEP-7 payment request -- app.json's own `globewallet://` scheme
+        // is also routed through this listener for other deep links (none
+        // yet), and those shouldn't show a SEP-7-flavored error.
+        if (url.startsWith("web+stellar:")) {
+          Alert.alert("Invalid payment link", validated.reason);
+        }
+        return;
+      }
+      useSendIntentStore.getState().setPending(validated);
+      router.push("/send");
+    };
+
+    Linking.getInitialURL().then(handleUrl).catch(() => undefined);
+    const subscription = Linking.addEventListener("url", ({ url }) => handleUrl(url));
+    return () => subscription.remove();
+  }, []);
+
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
       const wasForeground = AppState.currentState === "active";
@@ -129,11 +195,29 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="light" />
+      {/* Issue #19: a persistent, always-visible indicator of the active
+          network -- not just something shown at send time -- so a user
+          can't lose track of whether they're on Testnet or Mainnet. Placed
+          above the Stack so it renders on every screen, including the lock
+          screen. */}
+      {networkHydrated && isOnboarded && (
+        <View
+          style={[styles.networkBanner, network === "mainnet" ? styles.networkBannerMainnet : styles.networkBannerTestnet]}
+          accessibilityRole="text"
+          accessibilityLabel={`Active network: ${network === "mainnet" ? "Mainnet" : "Testnet"}`}
+        >
+          <Text style={styles.networkBannerText}>
+            {network === "mainnet" ? "MAINNET — real funds" : "TESTNET"}
+          </Text>
+        </View>
+      )}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="auth" />
         <Stack.Screen name="tabs" />
+        <Stack.Screen name="send" />
         <Stack.Screen name="guardians" />
+        <Stack.Screen name="settings" />
         <Stack.Screen name="chat" />
         <Stack.Screen name="accounts" />
         <Stack.Screen name="contacts" />
@@ -172,6 +256,14 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  networkBanner: {
+    paddingTop: 4,
+    paddingBottom: 4,
+    alignItems: "center",
+  },
+  networkBannerTestnet: { backgroundColor: "#1e293b" },
+  networkBannerMainnet: { backgroundColor: "#7c2d12" },
+  networkBannerText: { color: "#f8fafc", fontSize: 11, fontWeight: "700", letterSpacing: 1 },
   redactionOverlay: {
     position: "absolute",
     top: 0,

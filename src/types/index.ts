@@ -40,11 +40,48 @@ export interface Contact {
   createdAt: string;
 }
 
+export type NetworkId = "testnet" | "mainnet";
+
 export interface NetworkConfig {
+  id: NetworkId;
+  label: string;
   horizonUrl: string;
-  rpcUrl: string;
+  rpcUrl?: string;
   networkPassphrase: string;
   friendbotUrl?: string;
+}
+
+/**
+ * A signed-but-not-yet-confirmed payment, persisted so it survives an app
+ * restart while the device is offline (issue #14). `networkId`/
+ * `networkPassphrase` pin down exactly which network context the signature
+ * is valid for -- if the active network changes before this gets
+ * broadcast, the queue must invalidate the item rather than resubmit it
+ * under a different passphrase (issue #19's replay-risk concern).
+ */
+export interface QueuedPayment {
+  id: string;
+  signedXdr: string;
+  networkId: NetworkId;
+  networkPassphrase: string;
+  sourcePublicKey: string;
+  destinationPublicKey: string;
+  assetCode: string;
+  assetIssuer?: string;
+  amount: string;
+  /** The source account's sequence number consumed by this transaction. */
+  sequence: string;
+  createdAt: number;
+  /**
+   * "pending": waiting to be (re)tried. "submitting": a broadcast attempt is
+   * in flight right now -- flushQueue() skips items in this state so a
+   * second concurrent flush can never double-submit the same signed XDR.
+   * "failed": broadcast was attempted and definitively rejected (bad
+   * sequence, network mismatch, etc). Failed items are surfaced to the user
+   * and removed, never silently retried.
+   */
+  status: "pending" | "submitting" | "failed";
+  lastError?: string;
 }
 
 export interface Guardian {

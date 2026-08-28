@@ -24,6 +24,7 @@
     "buffer": "^6.0.3",
     "expo": "~50.0.0",
     "expo-application": "~5.8.4",
+    "expo-camera": "~14.0.5",
     "expo-clipboard": "~5.0.1",
     "expo-crypto": "~12.8.1",
     "expo-device": "~5.9.4",
