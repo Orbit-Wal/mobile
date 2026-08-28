@@ -70,6 +70,10 @@ export default function HomeScreen() {
   };
 
   const handleAction = (action: string) => {
+    if (action === "Send") {
+      router.push("/send");
+      return;
+    }
     Alert.alert(action, `${action} is coming soon.`);
   };
 
