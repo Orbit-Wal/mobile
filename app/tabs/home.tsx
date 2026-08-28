@@ -172,6 +172,16 @@ export default function HomeScreen() {
           <Text style={styles.securityRowText}>Guardians & Recovery</Text>
           <Text style={styles.securityRowChevron}>›</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.securityRow, { marginTop: 8 }]}
+          onPress={() => router.push("/settings")}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+          accessibilityHint="Change network and other app settings"
+        >
+          <Text style={styles.securityRowText}>Settings</Text>
+          <Text style={styles.securityRowChevron}>›</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
