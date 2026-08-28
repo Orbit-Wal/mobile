@@ -2,8 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, AppState, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import NetInfo from "@react-native-community/netinfo";
 import { useWalletStore } from "@/store/walletStore";
+import { useNetworkStore } from "@/store/networkStore";
 import { authenticate } from "@/services/appLock";
+import { flushPendingPayments } from "@/services/stellar";
 
 // Re-lock after this long in the background, even if the OS never fully
 // killed the app. Chosen as a reasonable balance between security (an
@@ -15,6 +18,38 @@ export default function RootLayout() {
   const isOnboarded = useWalletStore((s) => s.isOnboarded);
   const hydrated = useWalletStore((s) => s.hydrated);
   const hydrate = useWalletStore((s) => s.hydrate);
+
+  const network = useNetworkStore((s) => s.network);
+  const networkHydrated = useNetworkStore((s) => s.hydrated);
+  const hydrateNetwork = useNetworkStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrateNetwork();
+  }, [hydrateNetwork]);
+
+  // Issue #14: flush the offline payment outbox once on cold start (in case
+  // the app was killed while items were still queued from a previous
+  // session), and again every time NetInfo reports a transition from
+  // offline to online. Fire-and-forget -- flushPendingPayments() is
+  // internally safe to call redundantly (see paymentQueue's queue lock),
+  // and there's no UI here that needs to block on the result.
+  const wasConnectedRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    flushPendingPayments().catch(() => {
+      // Best-effort; a failed flush attempt just leaves items pending for
+      // the next trigger.
+    });
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const isConnected = state.isConnected === true;
+      const wasConnected = wasConnectedRef.current;
+      wasConnectedRef.current = isConnected;
+      if (wasConnected === false && isConnected) {
+        flushPendingPayments().catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   // AppState transitions to "inactive" (iOS app switcher, incoming call
   // overlay) or "background" the instant the OS takes a snapshot for the
@@ -129,11 +164,28 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="light" />
+      {/* Issue #19: a persistent, always-visible indicator of the active
+          network -- not just something shown at send time -- so a user
+          can't lose track of whether they're on Testnet or Mainnet. Placed
+          above the Stack so it renders on every screen, including the lock
+          screen. */}
+      {networkHydrated && isOnboarded && (
+        <View
+          style={[styles.networkBanner, network === "mainnet" ? styles.networkBannerMainnet : styles.networkBannerTestnet]}
+          accessibilityRole="text"
+          accessibilityLabel={`Active network: ${network === "mainnet" ? "Mainnet" : "Testnet"}`}
+        >
+          <Text style={styles.networkBannerText}>
+            {network === "mainnet" ? "MAINNET — real funds" : "TESTNET"}
+          </Text>
+        </View>
+      )}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="auth" />
         <Stack.Screen name="tabs" />
         <Stack.Screen name="guardians" />
+        <Stack.Screen name="settings" />
         <Stack.Screen name="chat" />
       </Stack>
       {showLockScreen && (
@@ -168,6 +220,14 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  networkBanner: {
+    paddingTop: 4,
+    paddingBottom: 4,
+    alignItems: "center",
+  },
+  networkBannerTestnet: { backgroundColor: "#1e293b" },
+  networkBannerMainnet: { backgroundColor: "#7c2d12" },
+  networkBannerText: { color: "#f8fafc", fontSize: 11, fontWeight: "700", letterSpacing: 1 },
   redactionOverlay: {
     position: "absolute",
     top: 0,
