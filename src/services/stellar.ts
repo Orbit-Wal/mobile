@@ -9,7 +9,10 @@ export type StellarServiceErrorCode =
   | "INVALID_PUBLIC_KEY"
   | "ACCOUNT_NOT_FOUND"
   | "NETWORK_ERROR"
-  | "ENTROPY_UNAVAILABLE";
+  | "ENTROPY_UNAVAILABLE"
+  | "INVALID_MNEMONIC"
+  | "TRUSTLINE_HAS_BALANCE"
+  | "TRUSTLINE_LOW_RESERVE";
 
 /**
  * Wraps every failure mode getAccount/getBalances can hit in one typed error
@@ -190,4 +193,85 @@ export async function sendPayment(params: {
   // doesn't leave the caller waiting forever, but the caller is responsible
   // for checking transaction status before deciding to resubmit.
   return withTimeout(server.submitTransaction(tx), DEFAULT_TIMEOUT_MS, "submitTransaction");
+}
+
+/**
+ * Translates Horizon's changeTrust operation result codes into the specific,
+ * user-facing failures issue #26 calls out, instead of surfacing the raw
+ * Horizon/axios exception. See
+ * https://developers.stellar.org/docs/learn/encyclopedia/errors -- op_invalid_limit
+ * is what Horizon returns when a changeTrust's new limit (0, for a removal) is
+ * below the account's current balance of that asset; op_low_reserve is returned
+ * when adding a new trustline would push the account below its minimum XLM
+ * reserve (each trustline reserves 0.5 XLM).
+ */
+function translateChangeTrustError(err: unknown): StellarServiceError {
+  const opCodes: unknown = (err as { response?: { data?: { extras?: { result_codes?: { operations?: unknown } } } } })
+    ?.response?.data?.extras?.result_codes?.operations;
+  const codes = Array.isArray(opCodes) ? opCodes : [];
+  if (codes.includes("op_invalid_limit")) {
+    return new StellarServiceError(
+      "This trustline can't be removed because you still hold a non-zero balance of this asset. " +
+        "Send or convert the balance to zero first, then remove the trustline.",
+      "TRUSTLINE_HAS_BALANCE"
+    );
+  }
+  if (codes.includes("op_low_reserve")) {
+    return new StellarServiceError(
+      "Adding this trustline would put your account below the minimum XLM reserve required " +
+        "(each trustline reserves 0.5 XLM). Add more XLM to this account first.",
+      "TRUSTLINE_LOW_RESERVE"
+    );
+  }
+  if (err instanceof StellarServiceError) return err;
+  return new StellarServiceError("Could not update the trustline. Please try again.", "NETWORK_ERROR");
+}
+
+/**
+ * Establishes or updates a trustline via the changeTrust operation (issue #26).
+ * Passing limit: "0" removes the trustline (see removeTrustline below) --
+ * that's the same operation, not a different one, per the Stellar protocol.
+ * Callers are responsible for surfacing the ~0.5 XLM reserve-cost warning to
+ * the user *before* calling this (see app/trustlines/add.tsx), since by the
+ * time this function runs the user has already confirmed.
+ */
+export async function addTrustline(params: {
+  sourceSecretKey: string;
+  assetCode: string;
+  assetIssuer: string;
+  limit?: string;
+}): Promise<StellarSdk.Horizon.HorizonApi.SubmitTransactionResponse> {
+  const { sourceSecretKey, assetCode, assetIssuer, limit } = params;
+  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourceSecretKey);
+  const sourceAccount = await getAccount(sourceKeypair.publicKey());
+  const asset = new StellarSdk.Asset(assetCode, assetIssuer);
+
+  let fee: string = StellarSdk.BASE_FEE;
+  try {
+    fee = String(await server.fetchBaseFee());
+  } catch {
+    // Fall back to BASE_FEE.
+  }
+
+  const tx = new StellarSdk.TransactionBuilder(sourceAccount, { fee, networkPassphrase: NETWORK_PASSPHRASE })
+    .addOperation(StellarSdk.Operation.changeTrust({ asset, limit }))
+    .setTimeout(30)
+    .build();
+  tx.sign(sourceKeypair);
+
+  try {
+    return await withTimeout(server.submitTransaction(tx), DEFAULT_TIMEOUT_MS, "submitTransaction");
+  } catch (err) {
+    throw translateChangeTrustError(err);
+  }
+}
+
+/** Removes a trustline -- a changeTrust with limit "0". See addTrustline's
+ * translateChangeTrustError for the non-zero-balance error message. */
+export async function removeTrustline(params: {
+  sourceSecretKey: string;
+  assetCode: string;
+  assetIssuer: string;
+}): Promise<StellarSdk.Horizon.HorizonApi.SubmitTransactionResponse> {
+  return addTrustline({ ...params, limit: "0" });
 }

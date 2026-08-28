@@ -9,21 +9,42 @@ export default function WelcomeScreen() {
       <Text style={styles.subtitle}>Your gateway to the Stellar network</Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push("/auth/create")}
+        onPress={() => router.push("/auth/create-mnemonic")}
         accessibilityRole="button"
-        accessibilityLabel="Create Wallet"
-        accessibilityHint="Generates a new Stellar keypair on this device"
+        accessibilityLabel="Create Wallet with Recovery Phrase"
+        accessibilityHint="Generates a new 12-word BIP-39 recovery phrase on this device"
       >
         <Text style={styles.buttonText}>Create Wallet</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.button, styles.buttonSecondary]}
-        onPress={() => router.push("/auth/import")}
+        onPress={() => router.push("/auth/import-mnemonic")}
         accessibilityRole="button"
-        accessibilityLabel="Import Wallet"
-        accessibilityHint="Enter an existing Stellar secret key"
+        accessibilityLabel="Import Wallet with Recovery Phrase"
+        accessibilityHint="Enter an existing BIP-39 recovery phrase"
       >
         <Text style={styles.buttonTextSecondary}>Import Wallet</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.divider}>— advanced: raw secret key —</Text>
+
+      <TouchableOpacity
+        style={[styles.button, styles.buttonTertiary]}
+        onPress={() => router.push("/auth/create")}
+        accessibilityRole="button"
+        accessibilityLabel="Create Wallet with Raw Secret Key"
+        accessibilityHint="Generates a new Stellar keypair on this device without a recovery phrase"
+      >
+        <Text style={styles.buttonTextTertiary}>Create with Raw Key</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, styles.buttonTertiary]}
+        onPress={() => router.push("/auth/import")}
+        accessibilityRole="button"
+        accessibilityLabel="Import Wallet with Raw Secret Key"
+        accessibilityHint="Enter an existing Stellar secret key"
+      >
+        <Text style={styles.buttonTextTertiary}>Import with Raw Key</Text>
       </TouchableOpacity>
     </View>
   );
@@ -61,4 +82,7 @@ const styles = StyleSheet.create({
   buttonSecondary: { backgroundColor: "transparent", borderWidth: 1, borderColor: "#3b82f6" },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   buttonTextSecondary: { color: "#3b82f6", fontSize: 16, fontWeight: "600" },
+  divider: { color: "#64748b", fontSize: 12, marginVertical: 16 },
+  buttonTertiary: { backgroundColor: "transparent", paddingVertical: 10, marginBottom: 4 },
+  buttonTextTertiary: { color: "#64748b", fontSize: 14, fontWeight: "500" },
 });
