@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Stack } from "expo-router";
+import { ActivityIndicator, AppState, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
+import { Stack, router } from "expo-router";
+import * as Linking from "expo-linking";
 import { StatusBar } from "expo-status-bar";
 import { useWalletStore } from "@/store/walletStore";
 import { authenticate } from "@/services/appLock";
+import { useSendIntentStore } from "@/store/sendIntentStore";
+import { validateScannedInput } from "@/utils/scannedInput";
 
 // Re-lock after this long in the background, even if the OS never fully
 // killed the app. Chosen as a reasonable balance between security (an
@@ -87,6 +90,34 @@ export default function RootLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, isOnboarded]);
 
+  // SEP-7 (`web+stellar:pay`/`web+stellar:tx`) deep link handling (#12).
+  // Reuses the exact same untrusted-input contract as QR scanning (#15) via
+  // validateScannedInput() -- a malformed or ambiguous link is rejected
+  // outright rather than best-effort parsed, and a valid one is only ever
+  // handed to the send screen as pre-validated data, never raw text.
+  useEffect(() => {
+    const handleUrl = (url: string | null) => {
+      if (!url) return;
+      const validated = validateScannedInput(url);
+      if (validated.kind === "invalid") {
+        // Only surface an error for links that were clearly *trying* to be
+        // a SEP-7 payment request -- app.json's own `globewallet://` scheme
+        // is also routed through this listener for other deep links (none
+        // yet), and those shouldn't show a SEP-7-flavored error.
+        if (url.startsWith("web+stellar:")) {
+          Alert.alert("Invalid payment link", validated.reason);
+        }
+        return;
+      }
+      useSendIntentStore.getState().setPending(validated);
+      router.push("/send");
+    };
+
+    Linking.getInitialURL().then(handleUrl).catch(() => undefined);
+    const subscription = Linking.addEventListener("url", ({ url }) => handleUrl(url));
+    return () => subscription.remove();
+  }, []);
+
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
       const wasForeground = AppState.currentState === "active";
@@ -133,6 +164,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="auth" />
         <Stack.Screen name="tabs" />
+        <Stack.Screen name="send" />
         <Stack.Screen name="guardians" />
         <Stack.Screen name="chat" />
       </Stack>
