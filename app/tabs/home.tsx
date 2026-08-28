@@ -19,6 +19,8 @@ export default function HomeScreen() {
   const publicKey = useWalletStore((s) => s.publicKey);
   const balances = useWalletStore((s) => s.balances);
   const setBalances = useWalletStore((s) => s.setBalances);
+  const accounts = useWalletStore((s) => s.accounts);
+  const activeAccount = accounts.find((a) => a.publicKey === publicKey);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -158,6 +160,40 @@ export default function HomeScreen() {
           Recent Transactions
         </Text>
         <Text style={styles.empty}>No transactions yet</Text>
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          Wallet
+        </Text>
+        <TouchableOpacity
+          style={styles.securityRow}
+          onPress={() => router.push("/accounts")}
+          accessibilityRole="button"
+          accessibilityLabel="Accounts"
+        >
+          <Text style={styles.securityRowText}>
+            Accounts{activeAccount ? ` (${activeAccount.label})` : ""}
+          </Text>
+          <Text style={styles.securityRowChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.securityRow, { marginTop: 8 }]}
+          onPress={() => router.push("/contacts")}
+          accessibilityRole="button"
+          accessibilityLabel="Address Book"
+        >
+          <Text style={styles.securityRowText}>Address Book</Text>
+          <Text style={styles.securityRowChevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.securityRow, { marginTop: 8 }]}
+          onPress={() => router.push("/trustlines")}
+          accessibilityRole="button"
+          accessibilityLabel="Trustlines"
+        >
+          <Text style={styles.securityRowText}>Trustlines</Text>
+          <Text style={styles.securityRowChevron}>›</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle} accessibilityRole="header">

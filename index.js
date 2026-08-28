@@ -6,4 +6,14 @@
 // backs `crypto.getRandomValues` with the platform CSPRNG (SecRandomCopyBytes
 // on iOS, SecureRandom on Android) before expo-router loads any screens.
 import "react-native-get-random-values";
+
+// bip39 / stellar-hd-wallet (issue #9's mnemonic onboarding path) pull in
+// create-hmac under the hood, which expects the Node `Buffer` global that
+// Hermes doesn't provide. Polyfilled here, before any screen/service module
+// loads, for the same "must run first" reason as the crypto polyfill above.
+import { Buffer } from "buffer";
+if (typeof global.Buffer === "undefined") {
+  global.Buffer = Buffer;
+}
+
 import "expo-router/entry";

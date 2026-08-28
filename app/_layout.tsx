@@ -219,6 +219,10 @@ export default function RootLayout() {
         <Stack.Screen name="guardians" />
         <Stack.Screen name="settings" />
         <Stack.Screen name="chat" />
+        <Stack.Screen name="accounts" />
+        <Stack.Screen name="contacts" />
+        <Stack.Screen name="trustlines" />
+        <Stack.Screen name="send" />
       </Stack>
       {showLockScreen && (
         <View style={styles.redactionOverlay}>
